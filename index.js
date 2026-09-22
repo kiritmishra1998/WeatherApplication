@@ -1,55 +1,105 @@
-const choices=["rock","paper","scissors"];
-const playerDisplay=document.getElementById("playerDisplay");
-const computerDisplay=document.getElementById("computerDisplay");
-const resultDisplay=document.getElementById("resultDisplay");
-console.log(resultDisplay);
-const playerScoreDisplay=document.getElementById("playerScoreDisplay");
-const computerScoreDisplay=document.getElementById("computerScoreDisplay");
-let playerScore=0;
-let computerScore=0;
+const weatherForm=document.querySelector(".weatherForm");
+const cityInput=document.querySelector(".cityInput");
+const card=document.querySelector(".card");
+const apiKey="7235654090df2a02c7b060972bdfb515";
 
-function playGame(playerChoice)
+weatherForm.addEventListener("submit", async event=>{
+
+event.preventDefault();
+
+const city=cityInput.value;
+
+if(city)
 {
-    const computerChoice=choices[Math.floor(Math.random()*3)];
+ try{
+const weatherData=await getWeatherData(city);
+displayWeatherInfo(weatherData); 
+}
+ catch(error){
+    console.error(error);
+    displayError(error);
+ }
+}
+else{
+    displayError("Please enter a city");
+}
 
-    let result="";
+});
 
-    if(playerChoice===computerChoice)
+async function getWeatherData(city){
+
+    const apiUrl=`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}`;
+
+    const response=await fetch(apiUrl);
+    if(!response.ok)
     {
-        result="IT'S A TIE";
+        throw new Error("Could not fetch weather data");
     }
-    else
-    {
-        switch(playerChoice){
-            case "scissors":
-                result=(computerChoice==="paper")? "YOU WIN!":"YOU LOSE!";
-                break;
-                 case "paper":
-                result=(computerChoice==="rock")? "YOU WIN!":"YOU LOSE!";
-                break;
-                 case "rock":
-                result=(computerChoice==="scissors")? "YOU WIN!":"YOU LOSE!";
-                break;
-        }
-    }
+    return await response.json();
+}
 
-    playerDisplay.textContent=`PLAYER: ${playerChoice}`;
-    computerDisplay.textContent=`Computer: ${computerChoice}`;
-    console.log(result);
-    resultDisplay.textContent=result;
-resultDisplay.classList.remove("greenText","redText");
+function displayWeatherInfo(data){
+const{name:city,
+    main:{temp,humidity},
+    weather:[{description,id}]}=data;
 
-    switch(result){
-        case "YOU WIN!":
-            resultDisplay.classList.add("greenText");
-            playerScore++;
-            console.log(playerScore);
-            playerScoreDisplay.textContent=playerScore;
-            break;
-        case "YOU LOSE!":
-            resultDisplay.classList.add("redText");
-            computerScore++;
-            computerScoreDisplay.textContent=computerScore;
-            break;    
-    }
+  card.textContent="";
+  card.style.display="flex";  
+
+  const cityDisplay=document.createElement("h1");
+  const tempDisplay=document.createElement("p");
+  const humidityDisplay=document.createElement("p");
+  const descDisplay=document.createElement("p");
+  const weatherEmoji=document.createElement("p");
+
+
+  cityDisplay.textContent=city;
+  tempDisplay.textContent=`${(temp-273.15).toFixed(1)}°C`;
+humidityDisplay.textContent=`Humidity: ${humidity}%`;
+descDisplay.textContent=description;
+weatherEmoji.textContent=getWeatherEmoji(id);
+
+  cityDisplay.classList.add("cityDisplay");
+  tempDisplay.classList.add("tempDisplay");
+  humidityDisplay.classList.add("humidityDisplay");
+  descDisplay.classList.add("descDisplay");
+  weatherEmoji.classList.add("weatherEmoji");
+
+  card.appendChild(cityDisplay);
+  card.appendChild(tempDisplay);
+  card.appendChild(humidityDisplay);
+  card.appendChild(descDisplay);
+  card.appendChild(weatherEmoji);
+}
+
+function getWeatherEmoji(weatherId){
+switch(true)
+{
+    case (weatherId >=200 && weatherId < 300):
+        return "⛈️";
+        case (weatherId >=300 && weatherId < 400):
+        return "🌧️";
+        case (weatherId >=500 && weatherId < 600):
+        return "⛆";
+        case (weatherId >=600 && weatherId < 700):
+        return "❄️";
+        case (weatherId >=700 && weatherId < 800):
+        return "🌫️";
+        case (weatherId === 800):
+        return "☀️";
+        case (weatherId >=801 && weatherId < 810):
+        return "☁️";
+        default:
+            return "⁇";
+}
+}
+
+function displayError(message){
+const errorDisplay=document.createElement("p");
+errorDisplay.textContent=message;
+errorDisplay.classList.add("errorDisplay");
+
+card.textContent="";
+card.style.display="flex";
+card.appendChild(errorDisplay);
 }
